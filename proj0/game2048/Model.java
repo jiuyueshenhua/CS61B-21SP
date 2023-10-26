@@ -1,5 +1,6 @@
 package game2048;
 
+import java.util.Arrays;
 import java.util.Formatter;
 import java.util.Observable;
 
@@ -110,10 +111,48 @@ public class Model extends Observable {
         boolean changed;
         changed = false;
 
+        boolean [][] Merged = new boolean[board.size()][board.size()];
+        for(int c=0;c< board.size();c++) {
+            Arrays.fill(Merged[c],false);
+        }
+
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
-        // changed local variable to true.
 
+        //每块的操作：寻找下一个移动的位置，第一步是找到非空格的位置
+        //判断是否已merge，
+        //  若无，则判断是否能merge。
+        //      若能，判断能否合并，则移动，加分，changed
+        //若是，判断是否有空格，若有则移动
+        if(side != Side.NORTH ) board.setViewingPerspective(side);
+        for(int c=0;c< board.size();c++) {
+            for(int r= board.size()-1; r >=0 ;r-- ) {
+
+                if(board.tile(c,r) == null ) continue;
+
+                int next_r = r+1;
+                boolean Moved = false;
+
+                while( next_r<board.size() && board.tile(c,next_r) == null ) next_r++;
+
+                if( next_r<board.size() && !Merged[c][next_r] && board.tile(c,next_r)!= null ) {
+                    if( board.tile(c,r).value() == board.tile(c,next_r).value() ) {
+                        board.move(c,next_r,board.tile(c,r) );
+                        Merged[c][next_r] = true;
+                        score +=board.tile(c,next_r).value();
+                        Moved = true;
+                        changed = true;
+                    }
+                }
+                if( next_r - 1 > r && !Moved ) {
+                    board.move(c,next_r-1,board.tile(c,r));
+                    changed = true;
+                }
+            }
+        }
+
+
+        if(side!=Side.NORTH) board.setViewingPerspective(Side.NORTH);
         checkGameOver();
         if (changed) {
             setChanged();
@@ -138,6 +177,14 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        int s = b.size();
+        for(int i = 0; i < s;i++ ) {
+            for(int j=0; j < s ; j++ ) {
+                if( b.tile(i,j) == null ) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -148,6 +195,14 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        int s = b.size();
+        for(int i = 0; i < s;i++ ) {
+            for(int j=0; j < s ; j++ ) {
+                if( b.tile(i,j) != null && b.tile(i,j).value() >= MAX_PIECE ) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -158,8 +213,23 @@ public class Model extends Observable {
      * 2. There are two adjacent tiles with the same value.
      */
     public static boolean atLeastOneMoveExists(Board b) {
-        // TODO: Fill in this function.
-        return false;
+        boolean f = emptySpaceExists(b);
+        if( !f ) {
+            for(int c=0; c<b.size();c++ ) {
+                for(int r=0;r<b.size();r++) {
+                    int [][] diff=  { {0,1},{0,-1},{-1,0},{1,0} };
+                    for(int i=0;i<4;i++ ) {
+                        int nc = c+diff[i][0] , nr = r+diff[i][1];
+                        if(nc>=0 && nc < b.size() && nr >= 0 && nr<b.size() ) {
+                            if( b.tile(nc,nr).value() == b.tile(c,r).value() ) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return f;
     }
 
 
