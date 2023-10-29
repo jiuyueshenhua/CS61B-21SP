@@ -50,27 +50,15 @@ public class IntListExercises {
     /** Returns true if the last digit of x is equal to
      *  the first digit of x.
      */
-//    public static boolean firstDigitEqualsLastDigit(int x) {
-//        int lastDigit = x % 10;
-//        while (x >= 10) {
-//            x = x / 10;
-//        }
-//        int firstDigit = x ;
-//        return firstDigit == lastDigit;
-//    }
     public static boolean firstDigitEqualsLastDigit(int x) {
         int lastDigit = x % 10;
-        while (x > 10) {
+        while (x >= 10) {
             x = x / 10;
         }
-        int firstDigit;
-        if (x == 10) {
-            firstDigit = 1;
-        } else {
-            firstDigit = x % 10;
-        }
+        int firstDigit = x % 10 ;
         return firstDigit == lastDigit;
     }
+
 
     /**
      * Part C: (Buggy) mutative method that squares each prime
