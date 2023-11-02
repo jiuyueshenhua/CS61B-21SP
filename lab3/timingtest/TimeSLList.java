@@ -24,12 +24,11 @@ public class TimeSLList {
     public static void timeGetLast()  {
         // TODO: YOUR CODE HERE
         int N = 1000;
-        int opc=1000;
+        int opc=10000;
         AList<Integer> Ns = new AList<>();
         AList<Double> times = new AList<>();
         AList<Integer> opCount = new AList<>();
         while (N < 200000) {
-
             SLList<Integer> s =new SLList<>();
             for(int i=0;i<N;i++) {
                 s.addLast(i);
