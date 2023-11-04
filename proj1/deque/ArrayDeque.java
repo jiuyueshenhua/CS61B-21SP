@@ -1,0 +1,125 @@
+package deque;
+
+
+public class ArrayDeque<ItemType> {
+    private int size, nextFirst, nextLast;
+    private ItemType[] items;
+
+    private static final int CHECK_BIG_SIZE = 16;
+
+    public ArrayDeque() {
+        size = 0;
+        nextFirst = 0;
+        nextLast = 1;
+
+        items = (ItemType[]) new Object[8];
+    }
+
+    public int size() {
+        return size;
+    }
+
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
+    private int moveLeft(int i) {
+        return (i - 1 + items.length) % items.length;
+    }
+
+    private int moveRight(int i) {
+
+        return (i + 1 + items.length) % items.length;
+    }
+
+    public void printDeque() {
+
+        int i = moveRight(nextFirst);
+        while (i != nextLast) {
+            System.out.print(items[i]);
+            i = moveRight(i);
+            if (i == nextLast) {
+                System.out.println();
+            } else {
+                System.out.print(" ");
+            }
+        }
+    }
+
+    private void resize(int length) {
+        ItemType[] n = (ItemType[]) new Object[length];
+
+        int curid = moveRight(nextFirst);
+        int i = 1;
+        while (curid != nextLast) {
+            n[i] = items[curid];
+            i++;
+            curid = moveRight(curid);
+        }
+        nextFirst = 0;
+        nextLast = i;
+        items = n;
+    }
+
+    private boolean isTooMore() {
+        return size() >= CHECK_BIG_SIZE && size() * 4 < items.length;
+    }
+
+    private boolean isFull() {
+        return nextFirst == nextLast;
+    }
+
+    public void addFirst(ItemType item) {
+        if (isFull()) {
+            resize(size() * 2);
+        }
+        items[nextFirst] = item;
+        nextFirst = moveLeft(nextFirst);
+        size++;
+    }
+
+    public void addLast(ItemType item) {
+        if (isFull()) {
+            resize(size * 2);
+        }
+        items[nextLast] = item;
+        nextLast = moveRight(nextLast);
+        size++;
+    }
+
+    public ItemType removeLast() {
+        if (isEmpty()) {
+            return null;
+        }
+        nextLast = moveLeft(nextLast);
+        ItemType item = items[nextLast];
+        items[nextLast] = null;
+        size--;
+        if (isTooMore()) {
+            resize(items.length / 2);
+        }
+        return item;
+    }
+
+    public ItemType removeFirst() {
+        if (isEmpty()) {
+            return null;
+        }
+        nextFirst = moveRight(nextFirst);
+        ItemType item = items[nextFirst];
+        items[nextFirst] = null;
+        size--;
+        if (isTooMore()) {
+            resize(items.length / 2);
+        }
+        return item;
+    }
+
+    public ItemType get(int index) {
+        if (index < 0 || index >= size()) {
+            return null;
+        }
+        return items[(moveRight(nextFirst) + index) % items.length];
+    }
+
+}
