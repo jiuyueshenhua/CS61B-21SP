@@ -1,7 +1,9 @@
 package deque;
 
 
-public class ArrayDeque<ItemType> {
+import java.util.Iterator;
+
+public class ArrayDeque<ItemType> implements Deque<ItemType> {
     private int size, nextFirst, nextLast;
     private ItemType[] items;
 
@@ -15,13 +17,12 @@ public class ArrayDeque<ItemType> {
         items = (ItemType[]) new Object[8];
     }
 
+    @Override
     public int size() {
         return size;
     }
 
-    public boolean isEmpty() {
-        return size() == 0;
-    }
+
 
     private int moveLeft(int i) {
         return (i - 1 + items.length) % items.length;
@@ -32,6 +33,7 @@ public class ArrayDeque<ItemType> {
         return (i + 1 + items.length) % items.length;
     }
 
+    @Override
     public void printDeque() {
 
         int i = moveRight(nextFirst);
@@ -45,6 +47,7 @@ public class ArrayDeque<ItemType> {
             }
         }
     }
+
 
     private void resize(int length) {
         ItemType[] n = (ItemType[]) new Object[length];
@@ -69,6 +72,7 @@ public class ArrayDeque<ItemType> {
         return nextFirst == nextLast;
     }
 
+    @Override
     public void addFirst(ItemType item) {
         if (isFull()) {
             resize(size() * 2);
@@ -78,6 +82,7 @@ public class ArrayDeque<ItemType> {
         size++;
     }
 
+    @Override
     public void addLast(ItemType item) {
         if (isFull()) {
             resize(size * 2);
@@ -87,6 +92,7 @@ public class ArrayDeque<ItemType> {
         size++;
     }
 
+    @Override
     public ItemType removeLast() {
         if (isEmpty()) {
             return null;
@@ -101,6 +107,7 @@ public class ArrayDeque<ItemType> {
         return item;
     }
 
+    @Override
     public ItemType removeFirst() {
         if (isEmpty()) {
             return null;
@@ -115,6 +122,7 @@ public class ArrayDeque<ItemType> {
         return item;
     }
 
+    @Override
     public ItemType get(int index) {
         if (index < 0 || index >= size()) {
             return null;
@@ -122,4 +130,22 @@ public class ArrayDeque<ItemType> {
         return items[(moveRight(nextFirst) + index) % items.length];
     }
 
+    private class DequeIterator implements Iterator<ItemType> {
+        int cur=moveRight(nextFirst);
+
+        @Override
+        public boolean hasNext() {
+            return cur != nextLast;
+        }
+
+        @Override
+        public ItemType next() {
+            ItemType x=items[cur];
+            cur=moveRight(cur);
+            return x;
+        }
+    }
+   public Iterator<ItemType> iterator(){
+        return new DequeIterator();
+    }
 }

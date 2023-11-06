@@ -1,8 +1,10 @@
 package deque;
 
-import java.util.Deque;
 
-public class LinkedListDeque<ItemType> {
+
+import java.util.Iterator;
+
+public class LinkedListDeque<ItemType> implements Deque<ItemType> {
     private class Node {
         protected ItemType item;
         protected Node next;
@@ -28,6 +30,7 @@ public class LinkedListDeque<ItemType> {
         sentinel.prev = sentinel;
     }
 
+    @Override
     public void addFirst(ItemType item) {
         Node new0 = new Node(item);
         new0.prev = sentinel;
@@ -39,6 +42,7 @@ public class LinkedListDeque<ItemType> {
         size++;
     }
 
+    @Override
     public void addLast(ItemType item) {
         Node tail = sentinel.prev;
         Node new0 = new Node(item);
@@ -49,14 +53,14 @@ public class LinkedListDeque<ItemType> {
         size++;
     }
 
-    public boolean isEmpty() {
-        return size == 0;
-    }
 
+
+    @Override
     public int size() {
         return size;
     }
 
+    @Override
     public void printDeque() {
         Node cur = sentinel.next;
         for (int i = 0; i < size; i++) {
@@ -70,6 +74,7 @@ public class LinkedListDeque<ItemType> {
         }
     }
 
+    @Override
     public ItemType removeFirst() {
         if (size == 0) {
             return null;
@@ -82,6 +87,7 @@ public class LinkedListDeque<ItemType> {
         return fir.item;
     }
 
+    @Override
     public ItemType removeLast() {
         if (size == 0) {
             return null;
@@ -94,6 +100,7 @@ public class LinkedListDeque<ItemType> {
         return last.item;
     }
 
+    @Override
     public ItemType get(int index) {
         if (index < 0 || index >= size) {
             return null;
@@ -119,6 +126,26 @@ public class LinkedListDeque<ItemType> {
             return n.item;
         }
         return getHelper(index - 1, n.next);
+    }
+
+    private class DequeIterator implements Iterator<ItemType> {
+        Node cur = sentinel.next;
+
+        @Override
+        public boolean hasNext() {
+            return cur != sentinel;
+        }
+
+        @Override
+        public ItemType next() {
+            ItemType x = cur.item;
+            cur = cur.next;
+            return x;
+        }
+    }
+
+    public Iterator<ItemType> iterator() {
+        return new DequeIterator();
     }
 
 
