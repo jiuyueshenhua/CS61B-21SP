@@ -23,7 +23,6 @@ public class ArrayDeque<ItemType> implements Deque<ItemType> {
     }
 
 
-
     private int moveLeft(int i) {
         return (i - 1 + items.length) % items.length;
     }
@@ -117,7 +116,7 @@ public class ArrayDeque<ItemType> implements Deque<ItemType> {
         items[nextFirst] = null;
         size--;
         if (isTooMore()) {
-            resize(items.length / 2);
+            resize((items.length * 3) / 4);
         }
         return item;
     }
@@ -131,7 +130,7 @@ public class ArrayDeque<ItemType> implements Deque<ItemType> {
     }
 
     private class DequeIterator implements Iterator<ItemType> {
-        int cur=moveRight(nextFirst);
+        int cur = moveRight(nextFirst);
 
         @Override
         public boolean hasNext() {
@@ -140,12 +139,29 @@ public class ArrayDeque<ItemType> implements Deque<ItemType> {
 
         @Override
         public ItemType next() {
-            ItemType x=items[cur];
-            cur=moveRight(cur);
+            ItemType x = items[cur];
+            cur = moveRight(cur);
             return x;
         }
     }
-   public Iterator<ItemType> iterator(){
+
+    public Iterator<ItemType> iterator() {
         return new DequeIterator();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Deque) {
+            if (((Deque<?>) o).size() == this.size()) {
+                for (int i = 0; i < this.size(); i++) {
+                    if (((Deque<?>) o).get(i) != this.get(i)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

@@ -1,5 +1,6 @@
 package deque;
 
+import org.apache.commons.math3.analysis.function.Power;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -139,15 +140,14 @@ public class LinkedListDequeTest {
     @Test
     public void aDTEST() {
         ArrayDeque<Integer> ad = new ArrayDeque<>();
-        for(int i=0;i<50000;i++) {
+        for(int i = 0; i< Math.pow(2,20); i++) {
             ad.addLast(i);
-            ad.addFirst(i);
             //ad.printDeque();
         }
         //ad.printDeque();
-        for(int i=0;i<49999;i++) {
+        for(int i=0;i<Math.pow(2,20)-1;i++) {
             ad.removeLast();
-            ad.removeFirst();
+            //ad.removeFirst();
         }
         ad.printDeque();
     }

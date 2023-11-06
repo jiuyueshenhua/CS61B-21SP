@@ -1,7 +1,6 @@
 package deque;
 
 
-
 import java.util.Iterator;
 
 public class LinkedListDeque<ItemType> implements Deque<ItemType> {
@@ -52,7 +51,6 @@ public class LinkedListDeque<ItemType> implements Deque<ItemType> {
         sentinel.prev = new0;
         size++;
     }
-
 
 
     @Override
@@ -146,6 +144,21 @@ public class LinkedListDeque<ItemType> implements Deque<ItemType> {
 
     public Iterator<ItemType> iterator() {
         return new DequeIterator();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Deque) {
+            if (((Deque<?>) o).size() == this.size()) {
+                for (int i = 0; i < this.size(); i++) {
+                    if (((Deque<?>) o).get(i) != this.get(i)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
 
