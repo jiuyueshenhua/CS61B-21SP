@@ -140,15 +140,23 @@ public class LinkedListDequeTest {
     @Test
     public void aDTEST() {
         ArrayDeque<Integer> ad = new ArrayDeque<>();
+        ArrayDeque<Integer> X = new ArrayDeque<>();
         for(int i = 0; i< Math.pow(2,20); i++) {
             ad.addLast(i);
+            if(ad.usage() < 0.25 ) {
+                System.out.println("xx!: "+ i );
+            }
+            //ad.printDeque();
+        }
+        for (int i = 0; i < Math.pow(2, 20)-1; i++) {
+            ad.removeFirst();
+            if (ad.usage() < 0.25) {
+                System.out.println("RF!: " + ad.usage());
+                ad.PPR();
+            }
             //ad.printDeque();
         }
         //ad.printDeque();
-        for(int i=0;i<Math.pow(2,20)-1;i++) {
-            ad.removeLast();
-            //ad.removeFirst();
-        }
-        ad.printDeque();
+
     }
 }

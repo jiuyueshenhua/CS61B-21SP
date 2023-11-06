@@ -7,7 +7,7 @@ public class ArrayDeque<ItemType> implements Deque<ItemType> {
     private int size, nextFirst, nextLast;
     private ItemType[] items;
 
-    private static final int CHECK_BIG_SIZE = 16;
+    private static final int CHECK_BIG_SIZE = 4;
 
     public ArrayDeque() {
         size = 0;
@@ -64,7 +64,7 @@ public class ArrayDeque<ItemType> implements Deque<ItemType> {
     }
 
     private boolean isTooMore() {
-        return size() >= CHECK_BIG_SIZE && size() * 4 < items.length;
+        return items.length >= CHECK_BIG_SIZE && size() * 4 < items.length;
     }
 
     private boolean isFull() {
@@ -116,7 +116,7 @@ public class ArrayDeque<ItemType> implements Deque<ItemType> {
         items[nextFirst] = null;
         size--;
         if (isTooMore()) {
-            resize((items.length * 3) / 4);
+            resize(items.length / 2);
         }
         return item;
     }
@@ -154,7 +154,7 @@ public class ArrayDeque<ItemType> implements Deque<ItemType> {
         if (o instanceof Deque) {
             if (((Deque<?>) o).size() == this.size()) {
                 for (int i = 0; i < this.size(); i++) {
-                    if (((Deque<?>) o).get(i) != this.get(i)) {
+                    if (((Deque<?>) o).get(i).equals(this.get(i))) {
                         return false;
                     }
                 }
@@ -163,5 +163,6 @@ public class ArrayDeque<ItemType> implements Deque<ItemType> {
         }
         return false;
     }
+
 
 }
