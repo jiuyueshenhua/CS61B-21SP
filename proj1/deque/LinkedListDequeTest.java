@@ -1,7 +1,11 @@
 package deque;
 
+import edu.princeton.cs.introcs.StdRandom;
 import org.apache.commons.math3.analysis.function.Power;
 import org.junit.Test;
+
+import java.util.Random;
+
 import static org.junit.Assert.*;
 
 
@@ -140,23 +144,51 @@ public class LinkedListDequeTest {
     @Test
     public void aDTEST() {
         ArrayDeque<Integer> ad = new ArrayDeque<>();
-        ArrayDeque<Integer> X = new ArrayDeque<>();
-        for(int i = 0; i< Math.pow(2,20); i++) {
-            ad.addLast(i);
-            if(ad.usage() < 0.25 ) {
-                System.out.println("xx!: "+ i );
-            }
-            //ad.printDeque();
-        }
-        for (int i = 0; i < Math.pow(2, 20)-1; i++) {
-            ad.removeFirst();
-            if (ad.usage() < 0.25) {
-                System.out.println("RF!: " + ad.usage());
-                ad.PPR();
-            }
-            //ad.printDeque();
-        }
+        Deque<Integer> LL = new LinkedListDeque<>();
+//        for(int i = 0; i< Math.pow(2,20); i++) {
+//            ad.addLast(i);
+//            if(ad.usage() < 0.25 ) {
+//                System.out.println("xx!: "+ i );
+//            }
+//            //ad.printDeque();
+//        }
+//        for (int i = 0; i < Math.pow(2, 20)-1; i++) {
+//            ad.removeLast();
+//            if (ad.usage() < 0.25) {
+//                System.out.println("RF!: " + ad.usage());
+//                ad.PPR();
+//            }
+//            //ad.printDeque();
+//        }
         //ad.printDeque();
+        for(int i=0;i<80000;i++) {
+            int x = StdRandom.uniform(0, 4);
+            if(x==0) {
+                LL.addLast(i);
+                ad.addLast(i);
+            }
+            if(x==1) {
+                LL.removeFirst();
+                ad.removeFirst();
+            }
+            if(x==2) {
+                LL.addFirst(i);
+                ad.addFirst(i);
+            }
+            if(x==3) {
+                LL.removeLast();
+                ad.removeLast();
+            }
+            assertTrue(ad.equals(LL));
+            assertTrue(ad.equals(ad));
+            assertTrue(LL.equals(ad));
+            assertTrue(LL.equals(LL));
+            //assertTrue( ad.usage() < 0.25 || ad.size()<=8 );
+            if(ad.usage()<0.25) {
+                System.out.println(x);
+                ad.ppr();
+            }
+        }
 
     }
 }

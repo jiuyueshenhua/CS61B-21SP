@@ -151,7 +151,7 @@ public class LinkedListDeque<ItemType> implements Deque<ItemType> {
         if (o instanceof Deque) {
             if (((Deque<?>) o).size() == this.size()) {
                 for (int i = 0; i < this.size(); i++) {
-                    if (((Deque<?>) o).get(i).equals(this.get(i))) {
+                    if ( ! ((Deque<?>) o).get(i).equals(this.get(i))) {
                         return false;
                     }
                 }
