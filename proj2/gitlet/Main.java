@@ -1,11 +1,7 @@
 package gitlet;
 
 import static gitlet.Utils.*;
-
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -22,8 +18,8 @@ public class Main {
      */
     public static void main(String[] args) {
 
+        //test();//todo
         CheckArgsBefore(args);
-        //只检查了args为空
         String firstArg = args[0];
 
         File f = Repository.CURREPO;
@@ -75,26 +71,25 @@ public class Main {
                 break;
             case "checkout":
                 CurRepo.checkoutCheck(args);
-                if(args.length==2) {
+                if (args.length == 2) {
                     CurRepo.check(Branch.GetBranch(args[1]));
                 }
-                if(args.length==4) {
-                    CurRepo.check(args[1],args[3]);// checkout [commit id] -- [file name]
+                if (args.length == 4) {
+                    CurRepo.check(args[1], args[3]);// checkout [commit id] -- [file name]
                 }
-                if(args.length==3) {
+                if (args.length == 3) {
                     CurRepo.check(args[2]);
                 }
                 break;
         }
-        //Todo: save repo
+
         CurRepo.toFile();
     }
 
     private static void test() {
-        Repository currepo = readObject(join("testing","test04-prev-checkout_1",".gitlet","CurRepo"), Repository.class);
-
-        System.out.println(Commit.CreateInitCommit().GetHash());
-        System.out.println(Commit.CreateInitCommit().GetHash());
+        //System.out.println(Commit.CreateInitCommit().GetHash());
+        System.out.println(Commit.CreateInitCommit().isInitCommit());
+        System.exit(0);
     }
 
     private static void CheckArgsBefore(String[] args) {
