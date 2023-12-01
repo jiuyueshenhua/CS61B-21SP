@@ -1,14 +1,17 @@
 package gitlet;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashSet;
+
 import java.util.Set;
 import java.util.TreeSet;
 
+import static gitlet.Utils.*;
+
 public class StagingArea implements Serializable {
     Set<String> additon, removal;//string为文件名字
-
-
+    public static final File StagingRepo = join(Repository.GITLET_DIR, "Staging");
     StagingArea() {
         additon = new TreeSet<>();
         removal = new TreeSet<>();
@@ -26,6 +29,16 @@ public class StagingArea implements Serializable {
     }
 
     boolean AddToaddition(String s) {
+        File cwd = join(Repository.CWD,s);
+        File newf = join(StagingRepo,s);
+        if(!newf.exists()) {
+            try {
+                newf.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        writeContents(newf,readContentsAsString(join(cwd)));
         return additon.add(s);
     }
 
@@ -34,6 +47,8 @@ public class StagingArea implements Serializable {
     }
 
     boolean DeleteFromAddtion(String s) {
+        File f = join(StagingRepo,s);
+        restrictedDelete(f);
         return additon.remove(s);
     }
 
@@ -42,7 +57,17 @@ public class StagingArea implements Serializable {
     }
 
     void clean() {
+        for(String fn:additon) {
+            File f = join(StagingRepo,fn);
+            restrictedDelete(f);
+        }
         additon.clear();
         removal.clear();
+    }
+    File getFile(String Name) {//文件不存在时返回null
+        if(!additon.contains(Name)) {
+            return null;
+        }
+        return join(StagingRepo,Name);
     }
 }

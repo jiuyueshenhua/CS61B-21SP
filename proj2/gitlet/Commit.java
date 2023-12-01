@@ -93,6 +93,13 @@ public class Commit implements Serializable {
     Commit GetSecParent() {
         return Getcommit(secParentHash);
     }
+
+    /**
+     *
+     * @param filename
+     * @return
+     * 无相应文件返回null
+     */
     File GetFile(String filename) {
         return snap.get(filename);
     }
