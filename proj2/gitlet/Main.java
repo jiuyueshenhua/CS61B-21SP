@@ -21,7 +21,7 @@ public class Main {
     public static void main(String[] args) {
 
 
-        System.out.println("sss"+"xxxx");
+
         CheckArgsBefore(args);
         String firstArg = args[0];
 
