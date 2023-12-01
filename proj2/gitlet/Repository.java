@@ -132,7 +132,7 @@ public class Repository implements Serializable {
             staging.AddToremoval(cwd_file_name);// 我居然忘了加removal？？？ 前提条件：在cmisnap
         }
         head.getCommit().snap.remove(cwd_file_name);
-        staging.DeleteFromAddtion("cwd_file_name");
+        staging.DeleteFromAddtion(cwd_file_name);
     }
 
     void log() {
