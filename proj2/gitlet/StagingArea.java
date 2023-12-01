@@ -48,7 +48,7 @@ public class StagingArea implements Serializable {
 
     boolean DeleteFromAddtion(String s) {
         File f = join(StagingRepo,s);
-        restrictedDelete(f);
+        f.delete();
         return additon.remove(s);
     }
 
@@ -59,7 +59,7 @@ public class StagingArea implements Serializable {
     void clean() {
         for(String fn:additon) {
             File f = join(StagingRepo,fn);
-            restrictedDelete(f);
+            f.delete();
         }
         additon.clear();
         removal.clear();

@@ -65,6 +65,6 @@ public class Branch implements Serializable {
     }
     static void removeBranch(String brName) {
         File f=join(BRANCHES_REPO,brName);
-        restrictedDelete(f);
+        f.delete();
     }
 }
