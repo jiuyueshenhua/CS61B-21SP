@@ -50,11 +50,7 @@ public class Commit implements Serializable {
     }
 
     String GetHash() {
-        StringBuffer s = new StringBuffer();
-        s.append(date);
-        s.append(snap.toString());
-        s.append(firParentHash);
-        return sha1(s.toString());
+        return sha1(message+date.toString()+firParentHash);
     }
 
     boolean IsChildFor(Commit par) {

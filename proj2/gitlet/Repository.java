@@ -390,8 +390,10 @@ public class Repository implements Serializable {
     private void splitMapAdd(Branch newB) {
         File f = SPLITHASH_MAP;
         HashMap<Set<String>, String> splitMap;
+        HashMap<Set<String>, String> oldsmp;
         if (f.exists()) {
-            splitMap = readObject(f, HashMap.class);
+            oldsmp = readObject(f, HashMap.class);
+            splitMap =  new HashMap<Set<String>, String>(oldsmp);
         } else {
             try {
                 f.createNewFile();
@@ -399,12 +401,14 @@ public class Repository implements Serializable {
                 throw new RuntimeException("splitMapFile fail to create");
             }
             splitMap = new HashMap<>();
+            oldsmp = new HashMap<>();
         }
+
         Set<String> brPair = new HashSet<>();
         brPair.add(head.getName());
         brPair.add(newB.getName());
         splitMap.put(brPair, head.getCommit().GetHash());
-        for (Set<String> s : splitMap.keySet()) {// head,A -> commitHash1 , newB,A -> commitHash1
+        for (Set<String> s : oldsmp.keySet()) {// head,A -> commitHash1 , newB,A -> commitHash1
             if (s.contains(head.getName())) {
                 brPair = new HashSet<>(s);
                 brPair.remove(head.getName());
@@ -445,16 +449,17 @@ public class Repository implements Serializable {
         boolean valid = true;
         if (!isNoChange()) {
             System.out.println("You have uncommitted changes.");
-            valid = false;
+            System.exit(0);
         }
         File brf = join(Branch.BRANCHES_REPO, brName);
         if (!brf.exists()) {
             System.out.println("A branch with that name does not exist.");
-            valid = false;
+            System.exit(0);
+            //后面还会往下继续计算
         }
         if (brName.equals(head.getName())) {
             System.out.println("Cannot merge a branch with itself.");
-            valid = false;
+            System.exit(0);
         }
         Set<String> trackedFileName = trackingFileName();
         Commit giverCmi = Branch.GetBranch(brName).getCommit();
@@ -462,13 +467,13 @@ public class Repository implements Serializable {
             File cwdF = join(fileCmi);
             if (!trackedFileName.contains(fileCmi) && cwdF.exists()) {
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first");
-                valid = false;
-                break;
+                System.exit(0);
             }
         }
-        if (!valid) {
-            System.exit(0);
-        }
+        //这种写法很糟糕
+//        if (!valid) {
+//            System.exit(0);
+//        }
     }
 
     void merge(String brName) {
@@ -492,13 +497,16 @@ public class Repository implements Serializable {
         Commit receiver = head.getCommit();
         Commit giver = mergedBr.getCommit();
         Set<String> giverRemain = giver.snap.keySet();
-        if (receiver.IsChildFor(splitCmi)) {
+
+
+        //不仅写反了，甚至条件都写错了
+        if (giver.equals(splitCmi)) {
             System.out.println("Given branch is an ancestor of the current branch.");
+            check(brName);
             return;
         }
         if (receiver.equals(splitCmi)) {
-            System.out.println("Current branch fast-forwarded. ");
-            check(brName);
+            System.out.println("Current branch fast-forwarded.");
             return;
         }
         for (String receiverFn : receiver.snap.keySet()) {
