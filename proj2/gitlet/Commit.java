@@ -57,8 +57,29 @@ public class Commit implements Serializable {
         return sha1(s.toString());
     }
 
-    boolean IsChild(Commit par) {
-        throw new UnsupportedOperationException();
+    boolean IsChildFor(Commit par) {
+        return IsChildHelper(this,par);
+    }
+    private boolean IsChildHelper(Commit cur,Commit giver) {
+           if(cur.equals(giver)) {
+               return true;
+           }
+           if(cur.isInitCommit()) {
+               return false;
+           }
+           if(cur.isMerged()) {
+               return IsChildHelper(cur.GetFirParent(),giver) || IsChildHelper(cur.GetSecParent(),giver);
+           }
+           return IsChildHelper(cur.GetFirParent(),giver);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj==null) return false;
+        if(obj instanceof Commit ) {
+            return this.GetHash().equals(((Commit) obj).GetHash());
+        }
+        return false;
     }
 
     Commit GetFirParent() {

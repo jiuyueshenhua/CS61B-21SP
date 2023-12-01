@@ -3,8 +3,9 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+
 import java.util.*;
-import java.util.stream.StreamSupport;
+
 
 import static gitlet.Utils.*;
 import static gitlet.Utils.readContentsAsString;
@@ -12,8 +13,8 @@ import static gitlet.Utils.readContentsAsString;
 
 /**
  * Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
+ * <p>
+ * does at a high level.
  *
  * @author TODO
  */
@@ -34,7 +35,7 @@ public class Repository implements Serializable {
      * The .gitlet directory.
      */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
-    public static final File SPLIT_MAP = join(GITLET_DIR, "split_map");
+    public static final File SPLITHASH_MAP = join(GITLET_DIR, "splitHash_map");
     public static final File BLOBS_REPO = join(GITLET_DIR, "Blobs");
     public static final File CURREPO = join(GITLET_DIR, "CurRepo");
 
@@ -55,7 +56,7 @@ public class Repository implements Serializable {
     void init() {
         GITLET_DIR.mkdir();
         BLOBS_REPO.mkdir();
-        SPLIT_MAP.mkdir();
+        SPLITHASH_MAP.mkdir();
         Commit.COMMITS_REPO.mkdir();
         Branch.BRANCHES_REPO.mkdir();
         Commit initcommit = Commit.CreateInitCommit();
@@ -73,6 +74,7 @@ public class Repository implements Serializable {
         File curfile = head.getCommit().GetFile(filename);
         staging.DeleteFromRemocal(filename);
         if (curfile != null && sha1(readContentsAsString(curfile)).equals(readContentsAsString(target))) {
+            staging.DeleteFromAddtion(filename);
             return;
         }
         staging.AddToaddition(filename);
@@ -100,6 +102,8 @@ public class Repository implements Serializable {
         }
         Commit newcommit = new Commit(message, head.getCommit(), newSnap);
         newcommit.toFile();
+
+        staging.clean();
         head.setCommit(newcommit);
         head.toFile();
     }
@@ -155,11 +159,11 @@ public class Repository implements Serializable {
                 System.exit(0);
             }
             Commit nextCommit = br.getCommit();
+            Set<String> trackedFileName = trackingFileName();
             for (String commFileName : nextCommit.snap.keySet()) {
                 File cwdFile = join(commFileName);
-                if (!cwdFile.exists()) {
+                if (!trackedFileName.contains(commFileName) && cwdFile.exists()) {
                     System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                    System.exit(0);
                 }
             }
 
@@ -181,8 +185,8 @@ public class Repository implements Serializable {
                 curCommit = head.getCommit();
             }
             assert curCommit != null;
-            File targetFile = curCommit.GetFile(targetName);
-            if (!targetFile.exists()) {
+            File targetFile = curCommit.GetFile(targetName);//如果文件不在commit中，返回的应该是null，而不是一个引向某个文件的file
+            if (targetFile == null || !targetFile.exists()) {
                 System.out.println("File does not exist in that commit.");
                 System.exit(0);
             }
@@ -203,16 +207,227 @@ public class Repository implements Serializable {
 
     void check(Branch br) {
         Commit nextCommit = br.getCommit();
-        Set<String> untrackedName = trackingFileName();
-        for (String fName:nextCommit.snap.keySet()) {
-            loadFile(nextCommit.snap.get(fName),join(fName));
-            untrackedName.remove(fName);
-        }
-        for(String delFName:untrackedName) {
-            restrictedDelete(delFName);
-        }
+        resetFile(nextCommit);
         head = br;
         staging.clean();
+    }
+
+    void resetFile(Commit nextCommit) {
+        Set<String> untrackedName = trackingFileName();
+        for (String fName : nextCommit.snap.keySet()) {
+            loadFile(nextCommit.snap.get(fName), join(fName));
+            untrackedName.remove(fName);
+        }
+        for (String delFName : untrackedName) {
+            restrictedDelete(delFName);
+        }
+    }
+
+    boolean findAndCheck(String mes) {
+        boolean valid = false;
+        for (String commitID : Objects.requireNonNull(plainFilenamesIn(Commit.COMMITS_REPO))) {
+            Commit c = Commit.Getcommit(commitID);
+            assert c != null;
+            if (c.message.equals(mes)) {
+                System.out.println(c.GetHash());
+                valid = true;
+            }
+        }
+        return valid;
+    }
+
+    void showStatus() {
+        System.out.println("=== Branches ===");
+        for (String brName : Objects.requireNonNull(plainFilenamesIn(Branch.BRANCHES_REPO))) {
+            if (head.equals(Branch.GetBranch(brName))) {
+                System.out.print("*");
+            }
+            System.out.println(brName);
+        }
+        System.out.println();
+        System.out.println();
+
+        System.out.println("=== Staged Files ===");
+        for (String fName : staging.additon) {
+            System.out.println(fName);
+        }
+        System.out.println();
+        System.out.println();
+
+        System.out.println("=== Removed Files ===");
+        for (String fName : staging.removal) {
+            System.out.println(fName);
+        }
+        System.out.println();
+        System.out.println();
+
+        TreeSet<String> trackedFileName = (TreeSet<String>) trackingFileName();
+
+        List<String> cwdFileName = plainFilenamesIn(CWD);
+
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        for (String tfn : trackedFileName) {
+            File cwdf = join(tfn);
+            if (!cwdf.exists()) {
+                System.out.printf("%s (deleted)\n", tfn);
+            } else {
+                if (!fileHash(head.getCommit().GetFile(tfn)).equals(fileHash(cwdf))) {
+                    System.out.printf("%s (modified)\n", tfn);
+                }
+            }
+            assert cwdFileName != null;
+            cwdFileName.remove(tfn);
+        }
+        System.out.println();
+        System.out.println();
+
+        System.out.println("=== Untracked Files ===");
+        for (String fn : cwdFileName) {
+            System.out.println(fn);
+        }
+        System.out.println();
+        System.out.println();
+    }
+
+    void branchCheck(String brName) {
+        File f = join(Branch.BRANCHES_REPO, brName);
+        if (f.exists()) {
+            System.out.println("A branch with that name already exists.");
+            System.exit(0);
+        }
+    }
+
+    void branch(String brName) {
+        Branch br = new Branch(head.getCommit().GetHash(), brName);
+        br.toFile();
+        splitMapAdd(br);
+    }
+
+    void rmBranchCheck(String brName) {
+        File f = join(Branch.BRANCHES_REPO, brName);
+        if (!f.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+        if (brName.equals(head.getName())) {
+            System.out.println("Cannot remove the current branch.");
+            System.exit(0);
+        }
+    }
+
+    void rmBranch(String brName) {
+        Branch.removeBranch(brName);
+        splitMapRemove(brName);
+    }
+
+    private void splitMapRemove(String brName) {
+        HashMap<Set<String>, String> newsm = new HashMap<>();
+
+        @SuppressWarnings("unchecked")
+        HashMap<Set<String>, String> splitmap = readObject(SPLITHASH_MAP,HashMap.class);
+
+        for (Set<String> s :splitmap.keySet()) {
+            if (!s.contains(brName)) {
+                newsm.put(s, splitmap.get(s));
+            }
+        }
+        writeObject(SPLITHASH_MAP, newsm);
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private void splitMapAdd(Branch newB) {
+        File f = SPLITHASH_MAP;
+        HashMap<Set<String>, String> splitMap;
+        if (f.exists()) {
+            splitMap = readObject(f, HashMap.class);
+        } else {
+            try {
+                f.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException("splitMapFile fail to create");
+            }
+            splitMap = new HashMap<>();
+        }
+        Set<String> brPair = new HashSet<>();
+        brPair.add(head.getName());
+        brPair.add(newB.getName());
+        splitMap.put(brPair, head.getCommit().GetHash());
+        for (Set<String> s : splitMap.keySet()) {// head,A -> commitHash1 , newB,A -> commitHash1
+            if (s.contains(head.getName())) {
+                brPair = new HashSet<>(s);
+                brPair.remove(head.getName());
+                brPair.add(newB.getName());
+                splitMap.put(brPair, splitMap.get(s));
+            }
+        }
+        writeObject(SPLITHASH_MAP, splitMap);
+    }
+
+    void resetCheck(String cmiHash) {
+        File f = join(Commit.COMMITS_REPO, getFullHash(cmiHash));
+        if (!f.exists()) {
+            System.out.println("No commit with that id exists.");
+        }
+        Commit nextCmi = Commit.Getcommit(getFullHash(cmiHash));
+        assert nextCmi != null;
+        Set<String> trackedFileName = trackingFileName();//
+        for (String fName : nextCmi.snap.keySet()) {
+            File cwdFile = join(fName);
+            if (!trackedFileName.contains(fName) && cwdFile.exists()) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
+            }
+        }
+    }
+
+    void reset(String cmiHash) {
+        Commit nextCmi = Commit.Getcommit(getFullHash(cmiHash));
+        resetFile(Objects.requireNonNull(nextCmi));
+        head.setCommit(nextCmi);
+        head.toFile();
+        staging.clean();
+    }
+
+    void mergeCheck(String brName) {
+        boolean valid = true;
+        if(!isNoChange()) {
+            System.out.println("You have uncommitted changes.");
+            valid=false;
+        }
+        File brf = join(Branch.BRANCHES_REPO,brName);
+        if(!brf.exists()){
+            System.out.println("A branch with that name does not exist.");
+            valid=false;
+        }
+        if(brName.equals(head.getName())) {
+            System.out.println("Cannot merge a branch with itself.");
+            valid=false;
+        }
+        Set<String> trackedFileName = trackingFileName();
+        Commit giverCmi = Branch.GetBranch(brName).getCommit();
+        for(String fileCmi:giverCmi.snap.keySet()) {
+            File cwdF= join(fileCmi);
+            if(!trackedFileName.contains(fileCmi) && cwdF.exists()  ) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first");
+                valid=false;
+                break;
+            }
+        }
+        if(!valid) {
+            System.exit(0);
+        }
+    }
+
+
+    Commit GetSplitCmi(Branch a1,Branch a2) {
+        @SuppressWarnings("unchecked")
+        HashMap<Set<String>,String> smp = readObject(SPLITHASH_MAP, HashMap.class);
+
+        Set<String> S = new HashSet<>();
+        S.add(a1.getName());
+        S.add(a2.getName());
+        return  Commit.Getcommit(smp.get(S));
     }
 
 
@@ -278,6 +493,7 @@ public class Repository implements Serializable {
         }
         return null;
     }
+
     void display() {
         System.out.printf("head: %s\n", head.getName());
         System.out.printf("staging: %s %s\n", staging.additon.toString(), staging.removal.toString());

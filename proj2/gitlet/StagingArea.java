@@ -8,11 +8,15 @@ import java.util.TreeSet;
 public class StagingArea implements Serializable {
     Set<String> additon, removal;//string为文件名字
 
+
     StagingArea() {
         additon = new TreeSet<>();
         removal = new TreeSet<>();
     }
 
+    /*
+    这里的函数封装过度了。因为addition和removal都是可访问的。
+     */
     boolean ExistInaddition(String s) {
         return additon.contains(s);
     }

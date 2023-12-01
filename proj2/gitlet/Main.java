@@ -1,9 +1,11 @@
 package gitlet;
 
 import static gitlet.Utils.*;
+
 import java.io.File;
-import java.util.Map;
-import java.util.TreeMap;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
 
 /**
  * Driver class for Gitlet, a subset of the Git version-control system.
@@ -18,7 +20,6 @@ public class Main {
      */
     public static void main(String[] args) {
 
-        //test();//todo
         CheckArgsBefore(args);
         String firstArg = args[0];
 
@@ -81,15 +82,68 @@ public class Main {
                     CurRepo.check(args[2]);
                 }
                 break;
+            case "find":
+                if (!CurRepo.findAndCheck(args[1])) {
+                    System.out.println();
+                    System.exit(0);
+                }
+            case "status":
+                CurRepo.showStatus();
+                break;
+            case "branch":
+                CurRepo.branchCheck(args[1]);
+                CurRepo.branch(args[1]);
+                break;
+            case "rm-branch":
+                CurRepo.rmBranchCheck(args[1]);
+                CurRepo.rmBranch(args[1]);
+                break;
+            case "reset":
+                CurRepo.resetCheck(args[1]);
+                CurRepo.reset(args[1]);
+                break;
+            case "merge":
         }
 
         CurRepo.toFile();
     }
 
-    private static void test() {
+    private static void sertest() {
         //System.out.println(Commit.CreateInitCommit().GetHash());
-        System.out.println(Commit.CreateInitCommit().isInitCommit());
-        System.exit(0);
+        Map<Set<String>, String> m = new HashMap<>();
+        Set<String> s = new HashSet<>();
+        s.add("aa");
+        s.add("bb");
+        m.put(s, "ab");
+
+        s = new HashSet<>();
+        s.add("cc");
+        s.add("dd");
+        m.put(s, "cd");
+
+        File f = join("testmap");
+        try {
+            if (!f.exists()) {
+                f.createNewFile();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        writeObject(f, (Serializable) m);
+        System.out.println(m);
+        System.out.println("----");
+
+    }
+
+    private static void desertest() {
+
+        @SuppressWarnings("unchecked")
+        HashMap<Set<String>, String> m = readObject(join("testmap"), HashMap.class);
+        System.out.println(m);
+        for (Set<String> s : m.keySet()) {
+            System.out.print(s + "  ");
+            System.out.println(m.get(s));
+        }
     }
 
     private static void CheckArgsBefore(String[] args) {
