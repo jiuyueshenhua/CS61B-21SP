@@ -98,7 +98,7 @@ public class Commit implements Serializable {
      *
      * @param filename
      * @return
-     * 无相应文件返回null
+     * 无相应文件时返回null
      */
     File GetFile(String filename) {
         return snap.get(filename);

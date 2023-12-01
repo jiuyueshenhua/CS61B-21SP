@@ -1,7 +1,6 @@
 package gitlet;
 
 
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -9,6 +8,7 @@ import java.io.Serializable;
 import java.nio.channels.NotYetBoundException;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.*;
+import java.util.zip.CheckedInputStream;
 
 
 import static gitlet.Utils.*;
@@ -80,7 +80,7 @@ public class Repository implements Serializable {
         File curfile = head.getCommit().GetFile(filename);
         staging.DeleteFromRemocal(filename);
         //相同
-        if (curfile != null && fileEquals(target,curfile)) {
+        if (curfile != null && fileEquals(target, curfile)) {
             staging.DeleteFromAddtion(filename);
             return;
         }
@@ -123,16 +123,16 @@ public class Repository implements Serializable {
     }
 
     void rm(String cwd_file_name) {
-        staging.additon.remove(cwd_file_name);
-        head.getCommit().snap.remove(cwd_file_name);
-        if(head.getCommit().snap.containsKey(cwd_file_name)) {
+
+        if (head.getCommit().snap.containsKey(cwd_file_name)) {
+            File f = join(cwd_file_name);
+            if (f.exists()) {
+                restrictedDelete(f);
+            }
             staging.AddToremoval(cwd_file_name);// 我居然忘了加removal？？？ 前提条件：在cmisnap
         }
-
-        File f = join(cwd_file_name);
-        if (f.exists()) {
-            restrictedDelete(f);
-        }
+        head.getCommit().snap.remove(cwd_file_name);
+        staging.DeleteFromAddtion("cwd_file_name");
     }
 
     void log() {
@@ -214,6 +214,14 @@ public class Repository implements Serializable {
         Commit giverCommit = Commit.Getcommit(getFullHash(commitID));
         assert giverCommit != null;
         assert giverCommit.GetFile(targetName) != null;
+        File cwdF = join(targetName);
+        if (!cwdF.exists()) {
+            try {
+                cwdF.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         loadFile(giverCommit.GetFile(targetName), join(targetName));
     }
 
@@ -299,14 +307,13 @@ public class Repository implements Serializable {
 
             if (cmiF != null) {
                 if (cwdF.exists()) {
-                    if (!fileEquals(cwdF, cmiF) && additionF ==null) {
+                    if (!fileEquals(cwdF, cmiF) && additionF == null) {
                         System.out.printf("%s (modified)\n", fn);
                     }
                 } else if (!staging.ExistInremoval(fn)) {
                     System.out.printf("%s (deleted)\n", fn);
                 }
-            }
-            else if (additionF != null) {
+            } else if (additionF != null) {
                 if (cwdF.exists()) {
                     if (!fileEquals(additionF, cwdF)) {
                         System.out.printf("%s (modified)\n", fn);
@@ -412,6 +419,7 @@ public class Repository implements Serializable {
         File f = join(Commit.COMMITS_REPO, getFullHash(cmiHash));
         if (!f.exists()) {
             System.out.println("No commit with that id exists.");
+            System.exit(0);
         }
         Commit nextCmi = Commit.Getcommit(getFullHash(cmiHash));
         assert nextCmi != null;
@@ -463,6 +471,101 @@ public class Repository implements Serializable {
         }
     }
 
+    void merge(String brName) {
+        /*
+        寻找split point点，更新(head,br)的split->merged
+        遍历head的tracking file
+            每个file都有三个状态,都是根据split的file确定，是否modified，是否为new，是否存在
+         */
+        boolean isConflict = false;
+        Branch mergedBr = Branch.GetBranch(brName);
+        Commit splitCmi = GetSplitCmi(head, mergedBr);
+
+        @SuppressWarnings("unchecked")
+        HashMap<Set<String>, String> splitMap = readObject(SPLITHASH_MAP, HashMap.class);
+        Set<String> s = new TreeSet<>();
+        s.add(head.getName());
+        s.add(brName);
+        splitMap.put(s, mergedBr.getCommit().GetHash());
+        writeObject(SPLITHASH_MAP, splitMap);
+
+        Commit receiver = head.getCommit();
+        Commit giver = mergedBr.getCommit();
+        Set<String> giverRemain = giver.snap.keySet();
+        if (receiver.IsChildFor(splitCmi)) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            return;
+        }
+        if (receiver.equals(splitCmi)) {
+            System.out.println("Current branch fast-forwarded. ");
+            check(brName);
+            return;
+        }
+        for (String receiverFn : receiver.snap.keySet()) {
+            giverRemain.remove(receiverFn);
+
+            File giverF = giver.GetFile(receiverFn);
+            File splitF = splitCmi.GetFile(receiverFn);
+            File receiveF = receiver.GetFile(receiverFn);
+            if (splitF == null) {
+                if (giverF != null && !fileEquals(receiveF, giverF)) {
+                    conflictFix(receiveF, giverF, receiverFn);
+                    isConflict = true;
+                }
+            } else {
+                if (splitF.equals(receiveF)) {// A A
+                    if (giverF == null) {
+                        rm(receiverFn);
+                    } else if (!fileEquals(splitF, giverF)) {
+                        check(giver.GetHash(), receiverFn);
+                        add(receiverFn);
+                    }
+                } else { // A !A
+                    if (giverF == null || !fileEquals(giverF, splitF)) {
+                        conflictFix(receiveF, giverF, receiverFn);
+                        isConflict = true;
+                    }
+                }
+            }
+        }
+        for (String giverFn : giverRemain) {
+            File giverF = giver.GetFile(giverFn);
+            File splitF = splitCmi.GetFile(giverFn);
+            File receiveF = receiver.GetFile(giverFn);
+            if(splitF == null ){ // x x
+                loadFile(giverF,join(giverFn));
+            } else {// A x
+                if(!fileEquals(giverF,splitF)) {
+                    conflictFix(receiveF,giverF,giverFn);
+                    isConflict=true;
+                }
+            }
+        }
+
+        commit("Merged ["+brName+"] into ["+head.getName()+"].\n");
+        if(isConflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
+    }
+
+    private void conflictFix(File headF, File mergedF, String fileName) {// 由commit返回的file对象！
+        String contentHead = "", contentMerged = "";
+        if (headF != null) {
+            contentHead = readContentsAsString(headF);
+        }
+        if (mergedF != null) {
+            contentMerged = readContentsAsString(mergedF);
+        }
+        File cwdF = join(fileName);
+        if (!cwdF.exists()) {
+            try {
+                cwdF.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        writeContents(cwdF, "<<<<<<< HEAD\n", contentHead, "\n", "=======\n", contentMerged, ">>>>>>>", "\n");
+    }
 
     Commit GetSplitCmi(Branch a1, Branch a2) {
         @SuppressWarnings("unchecked")

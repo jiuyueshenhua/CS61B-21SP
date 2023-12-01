@@ -20,6 +20,8 @@ public class Main {
      */
     public static void main(String[] args) {
 
+
+        System.out.println("sss"+"xxxx");
         CheckArgsBefore(args);
         String firstArg = args[0];
 
@@ -83,7 +85,7 @@ public class Main {
                 break;
             case "find":
                 if (!CurRepo.findAndCheck(args[1])) {
-                    System.out.println();
+                    System.out.println("Found no commit with that message.");
                     System.exit(0);
                 }
                 break;
@@ -103,6 +105,8 @@ public class Main {
                 CurRepo.reset(args[1]);
                 break;
             case "merge":
+                CurRepo.mergeCheck(args[1]);
+                CurRepo.merge(args[1]);
                 break;
         }
 
