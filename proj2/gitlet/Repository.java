@@ -80,7 +80,7 @@ public class Repository implements Serializable {
         File curfile = head.getCommit().GetFile(filename);
         staging.DeleteFromRemocal(filename);
         //相同
-        if (curfile != null && sha1(readContentsAsString(curfile)).equals(readContentsAsString(target))) {
+        if (curfile != null && fileEquals(target,curfile)) {
             staging.DeleteFromAddtion(filename);
             return;
         }
@@ -126,6 +126,7 @@ public class Repository implements Serializable {
     void rm(String cwd_file_name) {
         staging.additon.remove(cwd_file_name);
         head.getCommit().snap.remove(cwd_file_name);
+        staging.AddToremoval(cwd_file_name);// 我居然忘了加removal？？？
         File f = join(cwd_file_name);
         if (f.exists()) {
             restrictedDelete(f);
@@ -283,7 +284,7 @@ public class Repository implements Serializable {
 
 
         System.out.println("=== Modifications Not Staged For Commit ===");
-        List<String> cwdcopy=plainFilenamesIn(CWD);
+        List<String> cwdcopy = new ArrayList<>(Objects.requireNonNull(plainFilenamesIn(CWD)));// 引用的问题，返回的居然是一个array！
         Set<String> tracked = trackingFileName();
         Commit curCmi = head.getCommit();
         for (String fn : tracked) {
@@ -291,6 +292,7 @@ public class Repository implements Serializable {
             File cmiF = curCmi.GetFile(fn);
             File additionF = staging.getFile(fn);
 
+            assert cwdcopy != null;
             cwdcopy.remove(fn);
 
             if (cmiF != null) {
