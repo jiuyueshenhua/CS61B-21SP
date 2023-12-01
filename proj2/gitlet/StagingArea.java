@@ -64,7 +64,13 @@ public class StagingArea implements Serializable {
         additon.clear();
         removal.clear();
     }
-    File getFile(String Name) {//文件不存在时返回null
+
+    /**
+     *
+     * @param Name
+     * @return 文件不存在时返回null
+     */
+    File getFile(String Name) {
         if(!additon.contains(Name)) {
             return null;
         }

@@ -32,7 +32,6 @@ public class Main {
         }
 
         switch (firstArg) {
-
             case "init":
                 if (Repository.GITLET_DIR.exists()) {
                     System.out.println("A Gitlet version-control system already exists in the current directory.");
@@ -87,6 +86,7 @@ public class Main {
                     System.out.println();
                     System.exit(0);
                 }
+                break;
             case "status":
                 CurRepo.showStatus();
                 break;
@@ -103,6 +103,7 @@ public class Main {
                 CurRepo.reset(args[1]);
                 break;
             case "merge":
+                break;
         }
 
         CurRepo.toFile();

@@ -61,7 +61,7 @@ public class Repository implements Serializable {
     void init() {
         GITLET_DIR.mkdir();
         BLOBS_REPO.mkdir();
-        SPLITHASH_MAP.mkdir();
+
         StagingArea.StagingRepo.mkdir();
         Commit.COMMITS_REPO.mkdir();
         Branch.BRANCHES_REPO.mkdir();
@@ -85,7 +85,6 @@ public class Repository implements Serializable {
             return;
         }
         staging.AddToaddition(filename);
-
     }
 
     void commit(String message) {//
@@ -126,7 +125,10 @@ public class Repository implements Serializable {
     void rm(String cwd_file_name) {
         staging.additon.remove(cwd_file_name);
         head.getCommit().snap.remove(cwd_file_name);
-        staging.AddToremoval(cwd_file_name);// 我居然忘了加removal？？？
+        if(head.getCommit().snap.containsKey(cwd_file_name)) {
+            staging.AddToremoval(cwd_file_name);// 我居然忘了加removal？？？ 前提条件：在cmisnap
+        }
+
         File f = join(cwd_file_name);
         if (f.exists()) {
             restrictedDelete(f);
@@ -292,12 +294,12 @@ public class Repository implements Serializable {
             File cmiF = curCmi.GetFile(fn);
             File additionF = staging.getFile(fn);
 
-            assert cwdcopy != null;
+
             cwdcopy.remove(fn);
 
             if (cmiF != null) {
                 if (cwdF.exists()) {
-                    if (!fileEquals(cwdF, cmiF) && !additionF.exists()) {
+                    if (!fileEquals(cwdF, cmiF) && additionF ==null) {
                         System.out.printf("%s (modified)\n", fn);
                     }
                 } else if (!staging.ExistInremoval(fn)) {
