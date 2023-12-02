@@ -541,8 +541,8 @@ public class Repository implements Serializable {
         }
         if (receiver.equals(splitCmi)) {
             System.out.println("Current branch fast-forwarded.");
-            head.setCommit(giver);
             check(mergedBr);// 参数传错
+            head.setCommit(giver);//顺序写反了
             return;
         }
         for (String receiverFn : receiver.snap.keySet()) {
@@ -587,7 +587,7 @@ public class Repository implements Serializable {
             }
         }
 
-        commit("Merged [" + brName + "] into [" + head.getName() + "].", giver);//注意这个commit("s")是无merge的情况;多打了换行符
+        commit("Merged " + brName + " into " + head.getName() + ".", giver);//注意这个commit("s")是无merge的情况;多打了换行符
         if (isConflict) {
             System.out.println("Encountered a merge conflict.");
         }
