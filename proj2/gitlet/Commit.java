@@ -56,6 +56,14 @@ public class Commit implements Serializable {
     boolean IsChildFor(Commit par) {
         return IsChildHelper(this,par);
     }
+
+    /**
+     * 当cur和giver相同时，返回true
+     * cur是giver的child时，返回true
+     * @param cur
+     * @param giver
+     * @return
+     */
     private boolean IsChildHelper(Commit cur,Commit giver) {
            if(cur.equals(giver)) {
                return true;

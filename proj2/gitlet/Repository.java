@@ -448,10 +448,10 @@ public class Repository implements Serializable {
                 brPair = new HashSet<>(s);
                 brPair.remove(head.getName());
                 brPair.add(newB.getName());
-                splitMap.put(brPair, splitMap.get(s));
+                splitMap.put(brPair, oldsmp.get(s));
             }
         }
-        writeObject(SPLITHASH_MAP, splitMap);
+        writeObject(SPLITHASH_MAP,(Serializable) splitMap);
     }
 
     void resetCheck(String cmiHash) {
@@ -521,13 +521,7 @@ public class Repository implements Serializable {
         Branch mergedBr = Branch.GetBranch(brName);
         Commit splitCmi = GetSplitCmi(head, mergedBr);
 
-        @SuppressWarnings("unchecked")
-        HashMap<Set<String>, String> splitMap = readObject(SPLITHASH_MAP, HashMap.class);
-        Set<String> s = new TreeSet<>();
-        s.add(head.getName());
-        s.add(brName);
-        splitMap.put(s, mergedBr.getCommit().GetHash());
-        writeObject(SPLITHASH_MAP, splitMap);
+
 
         Commit receiver = head.getCommit();
         Commit giver = mergedBr.getCommit();
@@ -539,6 +533,9 @@ public class Repository implements Serializable {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
         }
+
+        ChangeSplitPoint(mergedBr);
+
         if (receiver.equals(splitCmi)) {
             System.out.println("Current branch fast-forwarded.");
             check(mergedBr);// 参数传错
@@ -592,6 +589,25 @@ public class Repository implements Serializable {
             System.out.println("Encountered a merge conflict.");
         }
     }
+    private void ChangeSplitPoint(Branch mergedBr) {
+        //这里修改split_point，对于head，除了与merged分支的split point有改动外，以merged 分支派生的其他分支也有改动。
+        //(head,br)-> mergedPoint
+        @SuppressWarnings("unchecked")
+        HashMap<Set<String>, String> splitMap = readObject(SPLITHASH_MAP, HashMap.class);
+
+        for(String brName:Branch.getBranches()) {
+            Branch br = Branch.GetBranch(brName);
+            Commit brCmi = br.getCommit();
+            if(brCmi.IsChildFor(mergedBr.getCommit())) {
+                Set<String> s = new TreeSet<>();
+                s.add(head.getName());
+                s.add(br.getName());
+                splitMap.put(s,mergedBr.getCommit().GetHash());
+            }
+        }
+        writeObject(SPLITHASH_MAP,splitMap);
+    }
+
 
     private void conflictFix(File headF, File mergedF, String fileName) {// 由commit返回的file对象！
         String contentHead = "";
