@@ -115,6 +115,34 @@ public class Repository implements Serializable {
         head.toFile();
     }
 
+    void commit(String message,Commit secPar) {//
+        /*
+        CWD: text.txt
+        Blobs:
+            aasdf
+            dfada
+        作新的snap：
+            复制head commit的snap
+            根据removal，取消tracked文件
+            根据addition名单，把cwd的文件复制到blobs，并以其sha1命名。并将该映射添加到newsnap里
+         */
+        HashMap<String, File> newSnap = new HashMap<>(head.getCommit().snap);
+
+        for (String cwd_file_name : staging.removal) {
+            newSnap.remove(cwd_file_name);
+        }
+        for (String cwd_file_name : staging.additon) {
+            saveToBlobs(cwd_file_name);
+            newSnap.put(cwd_file_name, join(BLOBS_REPO, fileHash(join(cwd_file_name))));
+        }
+        Commit newcommit = new Commit(message, head.getCommit(),secPar,newSnap);
+        newcommit.toFile();
+
+        staging.clean();
+        head.setCommit(newcommit);
+        head.toFile();
+    }
+
     void rmCheck(String cwd_file_name) {//检查，若错误，退出程序
         if (!staging.additon.contains(cwd_file_name) && !head.getCommit().snap.containsKey(cwd_file_name)) {
             System.out.println("No reason to remove the file.");
@@ -502,11 +530,11 @@ public class Repository implements Serializable {
         //不仅写反了，甚至条件都写错了
         if (giver.equals(splitCmi)) {
             System.out.println("Given branch is an ancestor of the current branch.");
-            check(brName);
             return;
         }
         if (receiver.equals(splitCmi)) {
             System.out.println("Current branch fast-forwarded.");
+            check(brName);
             return;
         }
         for (String receiverFn : receiver.snap.keySet()) {
@@ -550,7 +578,7 @@ public class Repository implements Serializable {
             }
         }
 
-        commit("Merged ["+brName+"] into ["+head.getName()+"].\n");
+        commit("Merged ["+brName+"] into ["+head.getName()+"].\n",giver);//注意这个commit("s")是无merge的情况
         if(isConflict) {
             System.out.println("Encountered a merge conflict.");
         }
@@ -572,7 +600,7 @@ public class Repository implements Serializable {
                 throw new RuntimeException(e);
             }
         }
-        writeContents(cwdF, "<<<<<<< HEAD\n", contentHead, "\n", "=======\n", contentMerged, ">>>>>>>", "\n");
+        writeContents(cwdF, "<<<<<<< HEAD\n", contentHead, "\n", "=======\n", contentMerged, "\n>>>>>>>");
     }
 
     Commit GetSplitCmi(Branch a1, Branch a2) {
