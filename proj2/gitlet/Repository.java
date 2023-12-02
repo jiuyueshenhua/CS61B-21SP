@@ -541,7 +541,8 @@ public class Repository implements Serializable {
         }
         if (receiver.equals(splitCmi)) {
             System.out.println("Current branch fast-forwarded.");
-            check(brName);
+            head.setCommit(giver);
+            check(mergedBr);// 参数传错
             return;
         }
         for (String receiverFn : receiver.snap.keySet()) {
@@ -593,12 +594,13 @@ public class Repository implements Serializable {
     }
 
     private void conflictFix(File headF, File mergedF, String fileName) {// 由commit返回的file对象！
-        String contentHead = "", contentMerged = "";
+        String contentHead = "";
+        String contentMerged = "";
         if (headF != null) {
-            contentHead = readContentsAsString(headF);
+            contentHead ="\n"+readContentsAsString(headF);
         }
         if (mergedF != null) {
-            contentMerged = readContentsAsString(mergedF);
+            contentMerged = "\n" + readContentsAsString(mergedF);
         }
         File cwdF = join(fileName);
         if (!cwdF.exists()) {
@@ -608,7 +610,8 @@ public class Repository implements Serializable {
                 throw new RuntimeException(e);
             }
         }
-        writeContents(cwdF, "<<<<<<< HEAD\n", contentHead, "\n", "=======\n", contentMerged, "\n>>>>>>>");
+        //细节：文本处理
+        writeContents(cwdF, "<<<<<<< HEAD", contentHead.toString(),"\n=======", contentMerged.toString(),"\n>>>>>>>");
     }
 
     Commit GetSplitCmi(Branch a1, Branch a2) {
