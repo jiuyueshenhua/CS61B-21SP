@@ -115,7 +115,7 @@ public class Repository implements Serializable {
         head.toFile();
     }
 
-    void commit(String message,Commit secPar) {//
+    void commit(String message, Commit secPar) {//
         /*
         CWD: text.txt
         Blobs:
@@ -135,7 +135,7 @@ public class Repository implements Serializable {
             saveToBlobs(cwd_file_name);
             newSnap.put(cwd_file_name, join(BLOBS_REPO, fileHash(join(cwd_file_name))));
         }
-        Commit newcommit = new Commit(message, head.getCommit(),secPar,newSnap);
+        Commit newcommit = new Commit(message, head.getCommit(), secPar, newSnap);
         newcommit.toFile();
 
         staging.clean();
@@ -321,7 +321,7 @@ public class Repository implements Serializable {
          */
 
 
-        System.out.println("=== Modifications Not Staged For Commit ===");
+        System.out.println("=== Modifications Not Staged For Commit ==="); // 碰到conflict的文件如何处理？
         List<String> cwdcopy = new ArrayList<>(Objects.requireNonNull(plainFilenamesIn(CWD)));// 引用的问题，返回的居然是一个array！
         Set<String> tracked = trackingFileName();
         Commit curCmi = head.getCommit();
@@ -332,7 +332,9 @@ public class Repository implements Serializable {
 
 
             cwdcopy.remove(fn);
-
+            if (cwdF.exists() && isConflictFile(cwdF)) {
+                continue;
+            }
             if (cmiF != null) {
                 if (cwdF.exists()) {
                     if (!fileEquals(cwdF, cmiF) && additionF == null) {
@@ -362,6 +364,11 @@ public class Repository implements Serializable {
         }
         System.out.println();
 
+    }
+
+    private boolean isConflictFile(File f) {
+        String content = readContentsAsString(f);
+        return content.startsWith("<<<<<<< HEAD") && content.endsWith(">>>>>>>");
     }
 
     private boolean fileEquals(File f1, File f2) {
@@ -421,7 +428,7 @@ public class Repository implements Serializable {
         HashMap<Set<String>, String> oldsmp;
         if (f.exists()) {
             oldsmp = readObject(f, HashMap.class);
-            splitMap =  new HashMap<Set<String>, String>(oldsmp);
+            splitMap = new HashMap<Set<String>, String>(oldsmp);
         } else {
             try {
                 f.createNewFile();
@@ -524,7 +531,7 @@ public class Repository implements Serializable {
 
         Commit receiver = head.getCommit();
         Commit giver = mergedBr.getCommit();
-        Set<String> giverRemain = giver.snap.keySet();
+        Set<String> giverRemain = new TreeSet<>(giver.snap.keySet());// 代码实现问题，返回一个object副本，而不是引用
 
 
         //不仅写反了，甚至条件都写错了
@@ -568,18 +575,19 @@ public class Repository implements Serializable {
             File giverF = giver.GetFile(giverFn);
             File splitF = splitCmi.GetFile(giverFn);
             File receiveF = receiver.GetFile(giverFn);
-            if(splitF == null ){ // x x
-                loadFile(giverF,join(giverFn));
+            if (splitF == null) { // x x
+                loadFile(giverF, join(giverFn));//staging 没有处理
+                add(giverFn);
             } else {// A x
-                if(!fileEquals(giverF,splitF)) {
-                    conflictFix(receiveF,giverF,giverFn);
-                    isConflict=true;
+                if (!fileEquals(giverF, splitF)) {
+                    conflictFix(receiveF, giverF, giverFn);
+                    isConflict = true;
                 }
             }
         }
 
-        commit("Merged ["+brName+"] into ["+head.getName()+"].\n",giver);//注意这个commit("s")是无merge的情况
-        if(isConflict) {
+        commit("Merged [" + brName + "] into [" + head.getName() + "].", giver);//注意这个commit("s")是无merge的情况;多打了换行符
+        if (isConflict) {
             System.out.println("Encountered a merge conflict.");
         }
     }

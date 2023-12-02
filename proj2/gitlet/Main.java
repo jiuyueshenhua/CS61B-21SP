@@ -151,6 +151,7 @@ public class Main {
         }
     }
 
+
     private static void CheckArgsBefore(String[] args) {
         if (args.length == 0) {
             System.out.println("Please enter a command");
